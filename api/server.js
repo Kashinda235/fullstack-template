@@ -27,7 +27,7 @@ async function startServer() {
 
     // Home route
     app.get("/", (req, res) => {
-      res.send("API is running!");
+      res.send("API is running");
     });
 
     // Get all users from MongoDB
@@ -81,7 +81,7 @@ async function startServer() {
       console.log(`API listening on port ${PORT}`);
       console.log(`API running on http://localhost:${PORT}`);
     });
-    
+
   } catch (error) {
     console.error("Failed to start API:", error);
     process.exit(1);

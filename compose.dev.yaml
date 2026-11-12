@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: ./api
+    command: npm run dev
+    ports:
+      - "4000:4000"
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/tempo
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  mongodb:
+    image: mongo:8
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  mongo-data:
+    external: true
+    name: mongo-data
