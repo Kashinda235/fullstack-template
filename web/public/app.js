@@ -6,7 +6,7 @@ button.addEventListener("click", async () => {
 
     try {
         const response = await fetch(
-            "http://localhost:4000/api/users"
+            "/api/users"
         );
 
         if (!response.ok) {
