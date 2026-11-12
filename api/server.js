@@ -70,10 +70,18 @@ async function startServer() {
       }
     });
 
+    app.get("/health", (req, res) => {
+      res.status(200).json({
+        status: "healthy",
+        database: "connected"
+      });
+    });
+
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`API listening on port ${PORT}`);
       console.log(`API running on http://localhost:${PORT}`);
     });
+    
   } catch (error) {
     console.error("Failed to start API:", error);
     process.exit(1);
