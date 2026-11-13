@@ -2,6 +2,10 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
+const {
+    redisClient,
+    connectRedis
+} = require("./redis");
 
 const app = express();
 const PORT = 4000;
@@ -21,6 +25,10 @@ async function startServer() {
     await client.connect();
     console.log("Connected to MongoDB!");
 
+    // Connect to Redis
+    await connectRedis();
+    console.log("Connected to Redis.")
+
     // Select database and collection
     const db = client.db("tempo");
     const usersCollection = db.collection("users");
@@ -30,15 +38,41 @@ async function startServer() {
       res.send("API is running");
     });
 
-    // Get all users from MongoDB
+    // Get all users from Redis -> MongoDB
     app.get("/api/users", async (req, res) => {
-      try {
-        const users = await usersCollection.find({}).toArray();
-        res.json(users);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        res.status(500).json({ error: "Failed to fetch users" });
-      }
+        try {
+            const cacheKey = "users:all";
+            const cachedUsers = await redisClient.get(cacheKey);
+
+            if (cachedUsers) {
+                console.log("CACHE HIT");
+
+                return res.json({
+                    source: "redis",
+                    data: JSON.parse(cachedUsers)
+                });
+            }
+            console.log("CACHE MISS");
+            const users = await usersCollection.find({}).toArray();
+
+            // Save in Redis for 60 seconds
+            await redisClient.setEx(
+                cacheKey,
+                60,
+                JSON.stringify(users)
+            );
+
+            res.json({
+                source: "mongodb",
+                data: users
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                error: "Internal server error \nFailed to fetch users"
+            });
+        }
     });
 
     // Add a new user to MongoDB
@@ -59,6 +93,7 @@ async function startServer() {
         }
 
         const result = await usersCollection.insertOne(newUser);
+        await redisClient.del("users:all");
 
         res.status(201).json({
           _id: result.insertedId,

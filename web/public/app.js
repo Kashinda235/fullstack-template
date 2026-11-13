@@ -17,7 +17,7 @@ button.addEventListener("click", async () => {
 
         usersContainer.innerHTML = "";
 
-        users.forEach(user => {
+        users.data.forEach(user => {
             const div = document.createElement("div");
 
             div.className = "user";
